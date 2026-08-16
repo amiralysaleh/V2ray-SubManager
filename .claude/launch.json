@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vite",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--host"],
+      "autoPort": true,
+      "port": 5173
+    }
+  ]
+}

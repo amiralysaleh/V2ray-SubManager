@@ -34,6 +34,7 @@ export default function App() {
   const [gistId, setGistId] = useState('');
   const [showGistInput, setShowGistInput] = useState(false);
   const [resultUrl, setResultUrl] = useState('');
+  const [outputFormat, setOutputFormat] = useState<'base64' | 'plain'>('base64');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -153,13 +154,15 @@ export default function App() {
     if (options.addLocationFlag) addLog('info', 'Resolving server locations...');
 
     try {
-      const processed = await processConfigs(inputConfigs, options);
-      const count = inputConfigs.split('\n').filter(l => l.trim()).length;
+      const result = await processConfigs(inputConfigs, options);
+      // Output format: base64 (default, client-compatible) or plain (readable)
+      const outputContent = outputFormat === 'base64' ? result.base64 : result.plain;
+      const count = result.plain.split('\n').filter(l => l.trim()).length;
       const time = getTehranDate();
       const desc = `V2Ray Sub | ${count} servers | ${time}`;
 
       addLog('info', 'Publishing to GitHub...');
-      const res = await createOrUpdateGist(githubToken, filename, processed, desc, isUpdate ? gistId : undefined);
+      const res = await createOrUpdateGist(githubToken, filename, outputContent, desc, isUpdate ? gistId : undefined);
 
       if (res.files[filename]?.raw_url) {
         const permUrl = res.files[filename].raw_url.replace(/\/raw\/[a-z0-9]+\//i, '/raw/');
@@ -495,7 +498,22 @@ export default function App() {
 
                 {/* Actions */}
                 <div className="mt-4 flex flex-wrap gap-3 items-center justify-between">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {/* Output format selector */}
+                    <div className="flex items-center gap-1 p-1 bg-neutral-950 border border-neutral-800 rounded-lg">
+                      <button onClick={() => setOutputFormat('base64')}
+                        className={`px-2.5 py-1.5 text-[10px] font-medium rounded-md transition-colors ${
+                          outputFormat === 'base64' ? 'bg-violet-600 text-white' : 'text-neutral-500 hover:text-neutral-300'
+                        }`}>
+                        Base64
+                      </button>
+                      <button onClick={() => setOutputFormat('plain')}
+                        className={`px-2.5 py-1.5 text-[10px] font-medium rounded-md transition-colors ${
+                          outputFormat === 'plain' ? 'bg-violet-600 text-white' : 'text-neutral-500 hover:text-neutral-300'
+                        }`}>
+                        Plain
+                      </button>
+                    </div>
                     <button onClick={() => handlePublish(false)} disabled={loading || !githubToken || !inputConfigs.trim()}
                       className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-30 shadow-lg shadow-violet-950/30">
                       + Create New

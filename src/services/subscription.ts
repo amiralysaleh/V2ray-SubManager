@@ -189,7 +189,12 @@ export const parseSubscription = (content: string): string => {
 
 // --- Main Processor ---
 
-export const processConfigs = async (input: string, options: ProcessingOptions): Promise<string> => {
+export interface ProcessResult {
+  plain: string;
+  base64: string;
+}
+
+export const processConfigs = async (input: string, options: ProcessingOptions): Promise<ProcessResult> => {
   // Handle base64-encoded subscriptions: decode before processing,
   // then re-encode the result back to base64 when publishing.
   const inputText = parseSubscription(input);
@@ -213,7 +218,8 @@ export const processConfigs = async (input: string, options: ProcessingOptions):
     return line;
   });
 
-  return safeB64Encode(processed.join('\n'));
+  const plain = processed.join('\n');
+  return { plain, base64: safeB64Encode(plain) };
 };
 
 export const getTehranDate = (): string => {

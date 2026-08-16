@@ -3,15 +3,22 @@
 // ============================================================
 
 export const safeB64Decode = (str: string): string => {
+  // Normalize URL-safe chars and padding first — standard subs use
+  // plain base64 (+ / =), URL-safe subs use - _ without padding.
+  const normalized = str.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+
   try {
-    return decodeURIComponent(escape(atob(str)));
+    // Fast path: plain ASCII (works for standard base64 subs)
+    return atob(padded);
   } catch {
-    try {
-      const fixedStr = str.replace(/-/g, '+').replace(/_/g, '/');
-      return decodeURIComponent(escape(atob(fixedStr)));
-    } catch {
-      return '';
-    }
+    /* fall through */
+  }
+  try {
+    // UTF-8 path (for base64 containing non-ASCII, e.g. Persian remarks)
+    return decodeURIComponent(escape(atob(padded)));
+  } catch {
+    return '';
   }
 };
 

@@ -24,7 +24,7 @@ const LogPanel: React.FC<LogPanelProps> = ({ logs }) => {
               log.type === 'error'
                 ? 'text-red-400'
                 : log.type === 'success'
-                ? 'text-neutral-200'
+                ? 'text-green-400'
                 : log.type === 'warning'
                 ? 'text-yellow-400'
                 : 'text-neutral-400'

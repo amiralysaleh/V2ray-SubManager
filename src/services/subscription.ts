@@ -176,14 +176,24 @@ const processUrlBased = (link: string, opts: ProcessingOptions, index: number, l
 // --- Parse Subscription (base64 decode) ---
 
 export const parseSubscription = (content: string): string => {
-  const decoded = safeB64Decode(content.trim());
-  return decoded || content;
+  const trimmed = content.trim();
+  if (!trimmed) return content;
+
+  const decoded = safeB64Decode(trimmed);
+  // Only use the decoded payload if it actually looks like config links
+  if (decoded && /(vmess:\/\/|vless:\/\/|trojan:\/\/|ss:\/\/|ssr:\/\/)/i.test(decoded)) {
+    return decoded;
+  }
+  return content;
 };
 
 // --- Main Processor ---
 
 export const processConfigs = async (input: string, options: ProcessingOptions): Promise<string> => {
-  const lines = input.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  // Handle base64-encoded subscriptions: decode before processing,
+  // then re-encode the result back to base64 when publishing.
+  const inputText = parseSubscription(input);
+  const lines = inputText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
   let hostLocationMap: Record<string, LocationData> = {};
   if (options.addLocationFlag) {

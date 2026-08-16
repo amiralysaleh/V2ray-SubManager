@@ -34,7 +34,7 @@ export default function App() {
   const [gistId, setGistId] = useState('');
   const [showGistInput, setShowGistInput] = useState(false);
   const [resultUrl, setResultUrl] = useState('');
-  const [outputFormat, setOutputFormat] = useState<'base64' | 'plain'>('base64');
+  const [outputFormat, setOutputFormat] = useState<'base64' | 'plain'>('plain');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
 

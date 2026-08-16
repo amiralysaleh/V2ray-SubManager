@@ -16,8 +16,8 @@ const Toggle: React.FC<ToggleProps> = ({ label, checked, onChange, description }
       </div>
       <button
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-neutral-400 focus:ring-offset-1 focus:ring-offset-neutral-950 ${
-          checked ? 'bg-neutral-200' : 'bg-neutral-800'
+        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-violet-500 focus:ring-offset-1 focus:ring-offset-neutral-950 ${
+          checked ? 'bg-violet-600' : 'bg-neutral-800'
         }`}
       >
         <span

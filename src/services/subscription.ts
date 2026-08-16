@@ -155,6 +155,17 @@ const processUrlBased = (link: string, opts: ProcessingOptions, index: number, l
       if (sec === 'tls' || sec === 'reality') params.set('alpn', 'h2,http/1.1');
     }
 
+    // URL Enhancer: inject cs / fm / fp (bulk version of Proxy-Builder enhancer)
+    if (opts.enableEnhancer) {
+      const sec = params.get('security') || 'none';
+      if (opts.enhancerFp && opts.enhancerFp !== 'none') params.set('fp', opts.enhancerFp);
+      if (sec === 'tls' || sec === 'reality') {
+        if (opts.enhancerCs) params.set('cs', opts.enhancerCs);
+        if (opts.enhancerFm) params.set('fm', opts.enhancerFm);
+      }
+      url.search = url.search.replace(/\+/g, '%20');
+    }
+
     url.hash = encodeURIComponent(generateAlias('Config', index, loc, opts));
     return url.toString();
   } catch {

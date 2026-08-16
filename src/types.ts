@@ -14,6 +14,11 @@ export interface ProcessingOptions {
   enableCDNIP: boolean;
   customCDN: string;
   customBaseName: string;
+  // URL Enhancer (cs/fm/fp injection)
+  enableEnhancer: boolean;
+  enhancerFp: string;
+  enhancerCs: string;
+  enhancerFm: string;
 }
 
 export interface LogEntry {

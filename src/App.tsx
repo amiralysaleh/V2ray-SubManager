@@ -42,6 +42,7 @@ export default function App() {
     enableFragment: false, fragmentLength: '10-20', fragmentInterval: '10-20',
     allowInsecure: false, enableALPN: false,
     addLocationFlag: true, enableCDNIP: false, customCDN: '', customBaseName: '',
+    enableEnhancer: false, enhancerFp: 'chrome', enhancerCs: '', enhancerFm: '',
   });
 
   // === Enhancer Tab State ===
@@ -299,11 +300,13 @@ export default function App() {
           {/* Brand */}
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-neutral-200 text-neutral-950 flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-700 text-white flex items-center justify-center text-sm font-bold shadow-lg shadow-violet-950/50">
                 VS
               </div>
               <div>
-                <h1 className="text-sm font-bold tracking-tight text-neutral-100 leading-tight">V2Ray SubManager</h1>
+                <h1 className="text-sm font-bold tracking-tight text-neutral-100 leading-tight">
+                  V2Ray <span className="text-violet-400">SubManager</span>
+                </h1>
                 <p className="text-[10px] text-neutral-500 leading-tight">Subscription & Proxy Tools</p>
               </div>
             </div>
@@ -321,7 +324,7 @@ export default function App() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-neutral-200 text-neutral-100'
+                    ? 'border-violet-500 text-violet-400'
                     : 'border-transparent text-neutral-500 hover:text-neutral-300 hover:border-neutral-700'
                 }`}
               >
@@ -343,7 +346,7 @@ export default function App() {
             <div className="lg:col-span-1 space-y-4">
               <div className="border border-neutral-800 rounded-lg bg-neutral-900/50 p-4">
                 <h2 className="text-sm font-semibold text-neutral-200 mb-4 flex items-center gap-2">
-                  <span className="text-neutral-400">⚙</span> Processing Options
+                  <span className="text-violet-400">⚙</span> Processing Options
                 </h2>
                 <div className="space-y-1 divide-y divide-neutral-800/50">
                   {/* Naming */}
@@ -404,6 +407,39 @@ export default function App() {
 
                   <Toggle label="Allow Insecure" description="Skip TLS verification" checked={options.allowInsecure} onChange={v => setOptions({...options, allowInsecure: v})} />
                   <Toggle label="Optimize ALPN" description="Force h2,http/1.1 (TLS only)" checked={options.enableALPN} onChange={v => setOptions({...options, enableALPN: v})} />
+
+                  {/* URL Enhancer (bulk cs/fm/fp) */}
+                  <div className="py-2">
+                    <Toggle label="URL Enhancer" description="Bulk-inject fp / cs / fm into VLESS & Trojan" checked={options.enableEnhancer} onChange={v => setOptions({...options, enableEnhancer: v})} />
+                    {options.enableEnhancer && (
+                      <div className="mt-2 space-y-2">
+                        <div>
+                          <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Fingerprint (fp)</label>
+                          <select value={options.enhancerFp} onChange={e => setOptions({...options, enhancerFp: e.target.value})}
+                            className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-2 py-1.5 text-xs text-neutral-300 outline-none focus:border-violet-500">
+                            <option value="chrome">chrome</option>
+                            <option value="firefox">firefox</option>
+                            <option value="safari">safari</option>
+                            <option value="random">random</option>
+                            <option value="unsafe">unsafe</option>
+                            <option value="none">none</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Cipher Suites (cs)</label>
+                          <textarea value={options.enhancerCs} onChange={e => setOptions({...options, enhancerCs: e.target.value})}
+                            placeholder="TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:..."
+                            className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-2 py-1.5 text-[10px] text-neutral-300 font-mono outline-none focus:border-violet-500 resize-none h-12 placeholder:text-neutral-700" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Fragment Mask (fm)</label>
+                          <textarea value={options.enhancerFm} onChange={e => setOptions({...options, enhancerFm: e.target.value})}
+                            placeholder='{"tcp": [{"type": "fragment", ...}]}'
+                            className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-2 py-1.5 text-[10px] text-neutral-300 font-mono outline-none focus:border-violet-500 resize-none h-14 placeholder:text-neutral-700" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -415,7 +451,7 @@ export default function App() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold text-neutral-200 flex items-center gap-2">
-                    <span className="text-neutral-400">⌨</span> Config Editor
+                    <span className="text-violet-400">⌨</span> Config Editor
                   </h2>
                   <div className="flex items-center gap-2">
                     {showGistInput ? (
@@ -445,7 +481,7 @@ export default function App() {
                     onChange={e => setImportUrl(e.target.value)}
                     className="flex-1 bg-transparent rounded px-3 py-1.5 text-xs text-neutral-300 outline-none font-mono placeholder:text-neutral-700" />
                   <button onClick={handleImport} disabled={loading || !importUrl}
-                    className="px-3 py-1.5 bg-neutral-200 text-neutral-950 text-xs font-medium rounded hover:bg-neutral-300 transition-colors disabled:opacity-30">
+                    className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded transition-colors disabled:opacity-30">
                     Import
                   </button>
                 </div>
@@ -461,7 +497,7 @@ export default function App() {
                 <div className="mt-4 flex flex-wrap gap-3 items-center justify-between">
                   <div className="flex gap-2">
                     <button onClick={() => handlePublish(false)} disabled={loading || !githubToken || !inputConfigs.trim()}
-                      className="px-4 py-2 bg-neutral-200 text-neutral-950 text-xs font-medium rounded-lg hover:bg-neutral-300 transition-colors disabled:opacity-30">
+                      className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-30 shadow-lg shadow-violet-950/30">
                       + Create New
                     </button>
                     <button onClick={() => handlePublish(true)} disabled={loading || !githubToken || !inputConfigs.trim() || !gistId}
@@ -482,7 +518,7 @@ export default function App() {
                     <div className="flex gap-2">
                       <input readOnly value={resultUrl} className="flex-1 bg-neutral-950 border border-neutral-800 rounded py-2 px-3 text-xs text-neutral-300 font-mono outline-none" />
                       <button onClick={() => copyToClipboard(resultUrl, 'URL copied')}
-                        className="px-3 py-2 bg-neutral-200 text-neutral-950 text-xs font-medium rounded hover:bg-neutral-300 transition-colors">
+                        className="px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded transition-colors">
                         Copy
                       </button>
                     </div>
@@ -528,7 +564,7 @@ export default function App() {
           <div className="max-w-3xl mx-auto space-y-4">
             <div className="border border-neutral-800 rounded-lg bg-neutral-900/50 p-4">
               <h2 className="text-sm font-semibold text-neutral-200 mb-1 flex items-center gap-2">
-                <span className="text-neutral-400">✦</span> Fragment + Fingerprint Enhancer
+                <span className="text-violet-400">✦</span> Fragment + Fingerprint Enhancer
               </h2>
               <p className="text-xs text-neutral-500 mb-4">
                 Injects cs (cipher suites), fm (fragment mask), and fp (fingerprint) into VLESS / Trojan URLs
@@ -596,7 +632,7 @@ export default function App() {
               </div>
 
               <button onClick={handleEnhance} disabled={!enhancerParsed}
-                className="w-full py-2.5 bg-neutral-200 text-neutral-950 text-xs font-medium rounded-lg hover:bg-neutral-300 transition-colors disabled:opacity-30">
+                className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-30 shadow-lg shadow-violet-950/30">
                 Enhance URL
               </button>
             </div>
@@ -618,7 +654,7 @@ export default function App() {
           <div className="max-w-4xl mx-auto space-y-4">
             <div className="border border-neutral-800 rounded-lg bg-neutral-900/50 p-4">
               <h2 className="text-sm font-semibold text-neutral-200 mb-1 flex items-center gap-2">
-                <span className="text-neutral-400">⛓</span> Chain Builder
+                <span className="text-violet-400">⛓</span> Chain Builder
               </h2>
               <p className="text-xs text-neutral-500 mb-4">
                 Chain two proxy configs into Xray &amp; Sing-box configurations
@@ -671,11 +707,11 @@ export default function App() {
               <div className="flex items-center justify-center gap-2 p-3 mb-4 bg-neutral-950/50 border border-neutral-800 rounded-lg text-xs overflow-x-auto">
                 <span className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 font-medium">You</span>
                 <span className="text-neutral-600">→</span>
-                <span className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 font-medium">
+                <span className="px-3 py-1.5 rounded bg-violet-950/60 border border-violet-800/40 text-violet-300 font-medium">
                   {chainParsed1 ? `${chainParsed1.protocol.toUpperCase()}` : 'Proxy'}
                 </span>
                 <span className="text-neutral-600">→</span>
-                <span className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 font-medium">
+                <span className="px-3 py-1.5 rounded bg-violet-950/60 border border-violet-800/40 text-violet-300 font-medium">
                   {chainParsed2 ? `${chainParsed2.protocol.toUpperCase()}` : 'Chain'}
                 </span>
                 <span className="text-neutral-600">→</span>
@@ -711,7 +747,7 @@ export default function App() {
               </div>
 
               <button onClick={handleChainBuild} disabled={!chainParsed1 || !chainParsed2}
-                className="w-full py-2.5 bg-neutral-200 text-neutral-950 text-xs font-medium rounded-lg hover:bg-neutral-300 transition-colors disabled:opacity-30">
+                className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-30 shadow-lg shadow-violet-950/30">
                 Generate Chained Config
               </button>
             </div>
@@ -741,8 +777,8 @@ export default function App() {
 
       {/* ===== Footer ===== */}
       <footer className="border-t border-neutral-800 py-4 mt-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center text-[10px] text-neutral-700">
-          V2Ray SubManager v3 &mdash; Black &amp; White Edition
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center text-[10px] text-neutral-600">
+          V2Ray SubManager v3 <span className="text-violet-500">✦</span> Minimal Edition
         </div>
       </footer>
     </div>

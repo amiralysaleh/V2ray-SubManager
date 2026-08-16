@@ -19,6 +19,11 @@
   --color-neutral-850: #1a1a1a;
   --color-neutral-900: #171717;
   --color-neutral-950: #0a0a0a;
+
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #8b5cf6;
+  --color-violet-600: #7c3aed;
+  --color-violet-700: #6d28d9;
 }
 
 @layer base {

@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "vite",
+      "name": "dev",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["vite", "--host"],
       "autoPort": true,

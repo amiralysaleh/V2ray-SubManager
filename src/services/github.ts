@@ -1,5 +1,7 @@
 // ============================================================
-// GitHub Gist API Service
+// GitHub Gist API — calls GitHub directly.
+// Token is injected at build time via VITE_GITHUB_TOKEN
+// (supplied from GitHub Actions Secrets for static deployment).
 // ============================================================
 
 import { GistResponse } from '../types';

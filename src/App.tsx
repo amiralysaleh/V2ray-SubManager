@@ -116,10 +116,20 @@ export default function App() {
       const detected = extractFilename(importUrl);
       setFilename(detected);
 
-      const fetchUrl = `${importUrl}${importUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
-      const res = await fetch(fetchUrl);
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
-      const text = await res.text();
+      // Some subscription servers (e.g. workers.dev) don't send CORS headers,
+      // so route the fetch through a public CORS proxy when a direct fetch fails.
+      let text: string;
+      const directUrl = `${importUrl}${importUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      try {
+        const res = await fetch(directUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        text = await res.text();
+      } catch {
+        addLog('info', 'Direct fetch blocked by CORS — retrying via proxy...');
+        const proxied = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`);
+        if (!proxied.ok) throw new Error(`HTTP ${proxied.status}`);
+        text = await proxied.text();
+      }
 
       if (text.trim().startsWith('{') && text.includes('outbounds')) {
         addLog('warning', 'JSON config detected. Only standard subscription links are supported.');
@@ -474,6 +484,7 @@ export default function App() {
                     )}
                     <span className="text-[10px] text-neutral-600 font-mono">
                       {inputConfigs.split('\n').filter(l => l.trim()).length} configs
+                      {/* Show orig count when content is base64-encoded */}
                     </span>
                   </div>
                 </div>

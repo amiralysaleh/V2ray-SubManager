@@ -179,10 +179,12 @@ export const parseSubscription = (content: string): string => {
   const trimmed = content.trim();
   if (!trimmed) return content;
 
+  // Try to decode as base64 — many subscription URLs serve pure base64 payloads.
+  // The decoded result may use \n, \r\n, or even spaces as separators.
   const decoded = safeB64Decode(trimmed);
-  // Only use the decoded payload if it actually looks like config links
   if (decoded && /(vmess:\/\/|vless:\/\/|trojan:\/\/|ss:\/\/|ssr:\/\/)/i.test(decoded)) {
-    return decoded;
+    // Normalise line separators: collapse any whitespace-run into \n
+    return decoded.split(/[\r\n\s]+/).filter(Boolean).join('\n');
   }
   return content;
 };
@@ -195,8 +197,7 @@ export interface ProcessResult {
 }
 
 export const processConfigs = async (input: string, options: ProcessingOptions): Promise<ProcessResult> => {
-  // Handle base64-encoded subscriptions: decode before processing,
-  // then re-encode the result back to base64 when publishing.
+  // Handle base64-encoded subscriptions: decode before processing.
   const inputText = parseSubscription(input);
   const lines = inputText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 

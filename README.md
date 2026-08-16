@@ -1,6 +1,10 @@
-# V2ray-SubManager
+# V2Ray SubManager
 
 All-in-one subscription manager and proxy toolchain — process, enhance, and chain proxy configurations.
+
+🔗 **Live:** [amiralysaleh.github.io/V2ray-SubManager](https://amiralysaleh.github.io/V2ray-SubManager/)
+
+---
 
 ## Features
 
@@ -18,59 +22,50 @@ All-in-one subscription manager and proxy toolchain — process, enhance, and ch
 
 ### 3. Chain Builder
 - Chain two proxy configs into full configuration files
-- Output formats:
-  - **Xray JSON** — v2rayN, v2rayNG, Nekoray
-  - **Sing-box JSON** — standard sing-box config
-  - **Nekoray** — Sing-box compatible, client-optimized
-  - **Nekobox** — Android-optimized tun config
-- Supported protocols: VLESS, VMess, Trojan, Shadowsocks, SOCKS, HTTP
+- Output formats: **Xray JSON**, **Sing-box**, **Nekoray**, **Nekobox**
+- Supports: VLESS, VMess, Trojan, Shadowsocks, SOCKS, HTTP
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-- Node.js 18+
-- GitHub Personal Access Token (for Gist publishing)
-
-### Install & Run
+### Local Development
 
 ```bash
 npm install
 npm run dev
+# → http://localhost:5173
 ```
 
-Open http://localhost:5173
+### Production Build
 
-### Configure GitHub Token
-
-Copy `.env.example` to `.env` and add your token:
-
-```
-VITE_GITHUB_TOKEN=ghp_your_token_here
+```bash
+npm run build
+npm run preview
+# → http://localhost:4173/V2ray-SubManager/
 ```
 
-> Token needs the **gist** scope. Create one at https://github.com/settings/tokens
+### GitHub Token Setup
+
+The token is injected at **build time** via `VITE_GITHUB_TOKEN` (never shipped in source code).
+
+**For local dev:**
+```bash
+# Create .env file (never committed)
+echo "VITE_GITHUB_TOKEN=ghp_your_token_here" > .env
+npm run dev
+```
+
+**For GitHub Pages (automatic via Actions):**
+1. Go to repo **Settings → Secrets and variables → Actions**
+2. Add **New repository secret** → Name: `MY_GH_TOKEN`, Value: your GitHub classic token (with `gist` scope)
+3. Push to `main` — the workflow in `.github/workflows/deploy.yml` builds and deploys automatically
 
 ---
 
 ## Tech Stack
 
-- React 19 + TypeScript
-- Vite 6
-- Tailwind CSS 4
-- GitHub Gist API
-- GeoIP via ipwho.is / ipapi.co
-
----
-
-## Development
-
-```bash
-npm run dev     # Start dev server
-npm run build   # Production build
-npm run preview # Preview production build
-```
+React 19 + TypeScript + Vite 6 + Tailwind CSS 4
 
 ## License
 

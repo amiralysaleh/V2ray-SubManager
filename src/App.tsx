@@ -933,7 +933,7 @@ export default function App() {
       {/* ===== Footer ===== */}
       <footer className="border-t border-neutral-800 py-4 mt-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center text-[10px] text-neutral-600">
-          V2Ray SubManager v3 <span className="text-violet-500">✦</span> Minimal Edition
+          V2Ray SubManager v3 <span className="text-violet-500">✦</span> Renovated
         </div>
       </footer>
     </div>

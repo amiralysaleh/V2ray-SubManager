@@ -1,10 +1,33 @@
 // ============================================================
-// Proxy URL Parser — parses VLESS, VMess, Trojan, SS, SOCKS, HTTP
+// Proxy URL Parser — parses VLESS, VMess, Trojan, SS, SOCKS, HTTP, SSH
 // Merged from Proxy-Builder
 // ============================================================
 
 import { ParsedProxy } from '../types';
 import { safeBase64UrlDecode } from './base64';
+
+export interface SSHCredentials {
+  server: string;
+  port: number;
+  user: string;
+  password: string;
+}
+
+export const parseSSH = (creds: SSHCredentials): ParsedProxy | { error: string } | null => {
+  const server = creds.server.trim();
+  const port = creds.port || 22;
+  const user = creds.user.trim() || 'root';
+  if (!server) return null;
+  if (!creds.password) return { error: 'Password is required for SSH' };
+  return {
+    protocol: 'ssh',
+    server,
+    port,
+    user,
+    password: creds.password,
+    remark: `SSH ${server}:${port}`,
+  };
+};
 
 const safeAtob = (str: string): string | null => {
   try {

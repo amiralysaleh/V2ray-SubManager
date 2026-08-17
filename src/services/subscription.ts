@@ -194,6 +194,7 @@ export const parseSubscription = (content: string): string => {
 export interface ProcessResult {
   plain: string;
   base64: string;
+  enhancedCount: number;
 }
 
 export const processConfigs = async (input: string, options: ProcessingOptions): Promise<ProcessResult> => {
@@ -207,6 +208,7 @@ export const processConfigs = async (input: string, options: ProcessingOptions):
     if (hosts.length > 0) hostLocationMap = await batchResolve(hosts);
   }
 
+  let enhancedCount = 0;
   const processed = lines.map((line, index) => {
     const host = extractHost(line);
     const loc = host && hostLocationMap[host] ? hostLocationMap[host] : undefined;
@@ -214,13 +216,16 @@ export const processConfigs = async (input: string, options: ProcessingOptions):
     if (line.startsWith('vmess://')) return processVmess(line, options, index, loc);
     if (line.startsWith('ssr://')) return processSSR(line, options, index, loc);
     if (line.startsWith('vless://') || line.startsWith('trojan://') || line.startsWith('ss://')) {
-      return processUrlBased(line, options, index, loc);
+      const out = processUrlBased(line, options, index, loc);
+      // Count configs that actually got the F+F enhancement (fp/cs/fm injected)
+      if (options.enableEnhancer && out !== line) enhancedCount++;
+      return out;
     }
     return line;
   });
 
   const plain = processed.join('\n');
-  return { plain, base64: safeB64Encode(plain) };
+  return { plain, base64: safeB64Encode(plain), enhancedCount };
 };
 
 export const getTehranDate = (): string => {

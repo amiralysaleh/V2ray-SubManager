@@ -123,7 +123,7 @@ function buildOutbound(params: ParsedProxy, tag: string) {
 export const generateXrayConfig = (config1: ParsedProxy, config2: ParsedProxy, options?: Partial<ChainOptions>) => {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   if (config1.protocol === 'ssh' || config2.protocol === 'ssh') {
-    return { error: 'SSH is only supported by Sing-box' };
+    return { error: 'SSH protocol is only supported by Sing-box. Xray config is not available.' };
   }
 
   const proxy = buildOutbound(config1, 'proxy');

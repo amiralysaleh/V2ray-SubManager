@@ -8,7 +8,7 @@ import {
   generateNekorayConfig,
   generateNekoboxConfig,
 } from './services/chainBuilder';
-import { parseProxyURL } from './services/proxyParser';
+import { parseProxyURL, parseSSH } from './services/proxyParser';
 import { pingServer } from './services/speedTest';
 import Toggle from './components/Toggle';
 import LogPanel from './components/LogPanel';
@@ -60,6 +60,10 @@ export default function App() {
   const [chainInput2, setChainInput2] = useState('');
   const [chainParsed1, setChainParsed1] = useState<ParsedProxy | null>(null);
   const [chainParsed2, setChainParsed2] = useState<ParsedProxy | null>(null);
+  const [sshMode1, setSshMode1] = useState(false);
+  const [sshMode2, setSshMode2] = useState(false);
+  const [sshCreds1, setSshCreds1] = useState({ server: '', port: 22, user: 'root', password: '' });
+  const [sshCreds2, setSshCreds2] = useState({ server: '', port: 22, user: 'root', password: '' });
   const [chainDns, setChainDns] = useState('https://8.8.8.8/dns-query');
   const [chainSocksPort, setChainSocksPort] = useState(10808);
   const [chainLogLevel, setChainLogLevel] = useState('warning');
@@ -165,6 +169,9 @@ export default function App() {
 
     try {
       const result = await processConfigs(inputConfigs, options);
+      if (options.enableEnhancer && result.enhancedCount > 0) {
+        addLog('success', `⭐ F+F applied to ${result.enhancedCount} config(s)`);
+      }
       // Output format: base64 (default, client-compatible) or plain (readable)
       const outputContent = outputFormat === 'base64' ? result.base64 : result.plain;
       const count = result.plain.split('\n').filter(l => l.trim()).length;
@@ -252,22 +259,45 @@ export default function App() {
   const onChainInputChange = (num: 1 | 2, val: string) => {
     if (num === 1) setChainInput1(val);
     else setChainInput2(val);
+    reparseChain(num);
+  };
 
-    const parsed = val.trim() ? parseProxyURL(val) : null;
+  const reparseChain = (num: 1 | 2, forceSSH?: boolean) => {
+    const useSSH = forceSSH !== undefined ? forceSSH : (num === 1 ? sshMode1 : sshMode2);
+    let parsed: ParsedProxy | { error: string } | null = null;
+    if (useSSH) {
+      parsed = num === 1 ? parseSSH(sshCreds1) : parseSSH(sshCreds2);
+    } else {
+      const val = num === 1 ? chainInput1 : chainInput2;
+      parsed = val.trim() ? parseProxyURL(val) : null;
+    }
     if (num === 1) setChainParsed1(parsed && !('error' in parsed) ? parsed : null);
     else setChainParsed2(parsed && !('error' in parsed) ? parsed : null);
+  };
+
+  const toggleSSHMode = (num: 1 | 2) => {
+    if (num === 1) setSshMode1(!sshMode1);
+    else setSshMode2(!sshMode2);
+    reparseChain(num, num === 1 ? !sshMode1 : !sshMode2);
   };
 
   const handleChainBuild = () => {
     if (!chainParsed1 || !chainParsed2) { addLog('error', 'Both configs required.'); return; }
     const opts = { dnsServer: chainDns, socksPort: chainSocksPort, logLevel: chainLogLevel };
+    const hasSSH = chainParsed1.protocol === 'ssh' || chainParsed2.protocol === 'ssh';
 
-    const xr = generateXrayConfig(chainParsed1, chainParsed2, opts);
-    if ('error' in xr) {
-      addLog('error', xr.error as string);
+    // Xray is not available when SSH is involved (like Proxy-Builder)
+    if (hasSSH) {
+      setChainXrayResult('');
+      addLog('warning', 'SSH is only supported by Sing-box. Xray config skipped.');
     } else {
-      setChainXrayResult(JSON.stringify(xr.config, null, 2));
-      setChainRemark(xr.remark);
+      const xr = generateXrayConfig(chainParsed1, chainParsed2, opts);
+      if ('error' in xr) {
+        setChainXrayResult('');
+      } else {
+        setChainXrayResult(JSON.stringify(xr.config, null, 2));
+        setChainRemark(xr.remark);
+      }
     }
 
     const sb = generateSingboxConfig(chainParsed1, chainParsed2, opts);
@@ -421,9 +451,9 @@ export default function App() {
                   <Toggle label="Allow Insecure" description="Skip TLS verification" checked={options.allowInsecure} onChange={v => setOptions({...options, allowInsecure: v})} />
                   <Toggle label="Optimize ALPN" description="Force h2,http/1.1 (TLS only)" checked={options.enableALPN} onChange={v => setOptions({...options, enableALPN: v})} />
 
-                  {/* URL Enhancer (bulk cs/fm/fp) */}
+                  {/* F+F (Patterniha) bulk enhancer */}
                   <div className="py-2">
-                    <Toggle label="URL Enhancer" description="Bulk-inject fp / cs / fm into VLESS & Trojan" checked={options.enableEnhancer} onChange={v => setOptions({...options, enableEnhancer: v})} />
+                    <Toggle label="F+F (Patterniha)" description="Bulk-inject fp / cs / fm into TLS configs ⭐" checked={options.enableEnhancer} onChange={v => setOptions({...options, enableEnhancer: v})} />
                     {options.enableEnhancer && (
                       <div className="mt-2 space-y-2">
                         <div>
@@ -696,17 +726,57 @@ export default function App() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-5 h-5 rounded bg-neutral-800 text-neutral-400 flex items-center justify-center text-[10px] font-bold">1</span>
                     <span className="text-xs font-medium text-neutral-300">Main Proxy</span>
-                    {chainParsed1 && <span className="text-[10px] text-neutral-500 font-mono ml-auto">{chainParsed1.protocol.toUpperCase()}</span>}
+                    <button
+                      onClick={() => toggleSSHMode(1)}
+                      className={`ml-auto px-2 py-0.5 text-[9px] font-medium rounded transition-colors ${
+                        sshMode1 ? 'bg-violet-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:text-neutral-200'
+                      }`}
+                      title="Switch to SSH mode"
+                    >🔑 SSH</button>
+                    {chainParsed1 && <span className="text-[10px] text-neutral-500 font-mono">{chainParsed1.protocol.toUpperCase()}</span>}
                   </div>
-                  <textarea value={chainInput1}
-                    onChange={e => onChainInputChange(1, e.target.value)}
-                    placeholder="vless://uuid@server:port?params#remark"
-                    className="w-full min-h-[100px] bg-neutral-950/50 border border-neutral-800 rounded-lg p-3 font-mono text-xs text-neutral-300 focus:ring-1 focus:ring-neutral-600 outline-none resize-y placeholder:text-neutral-700" />
-                  {chainParsed1 && (
-                    <div className="mt-2 p-2 bg-neutral-950/50 border border-neutral-800 rounded text-[10px] space-y-0.5 text-neutral-400">
-                      <div>{chainParsed1.server}:{chainParsed1.port}</div>
-                      {chainParsed1.type !== 'tcp' && <div>Transport: {chainParsed1.type}</div>}
-                      {chainParsed1.security !== 'none' && <div>Security: {chainParsed1.security}</div>}
+                  {!sshMode1 ? (
+                    <>
+                      <textarea value={chainInput1}
+                        onChange={e => onChainInputChange(1, e.target.value)}
+                        placeholder="vless://uuid@server:port?params#remark"
+                        className="w-full min-h-[100px] bg-neutral-950/50 border border-neutral-800 rounded-lg p-3 font-mono text-xs text-neutral-300 focus:ring-1 focus:ring-neutral-600 outline-none resize-y placeholder:text-neutral-700" />
+                      {chainParsed1 && (
+                        <div className="mt-2 p-2 bg-neutral-950/50 border border-neutral-800 rounded text-[10px] space-y-0.5 text-neutral-400">
+                          <div>{chainParsed1.server}:{chainParsed1.port}</div>
+                          {chainParsed1.type !== 'tcp' && <div>Transport: {chainParsed1.type}</div>}
+                          {chainParsed1.security !== 'none' && <div>Security: {chainParsed1.security}</div>}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="space-y-2 bg-neutral-950/50 border border-neutral-800 rounded-lg p-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2">
+                          <label className="text-[9px] text-neutral-500 uppercase block mb-0.5">Server</label>
+                          <input type="text" placeholder="1.2.3.4 or example.com" value={sshCreds1.server}
+                            onChange={e => { setSshCreds1({...sshCreds1, server: e.target.value}); reparseChain(1, true); }}
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-[11px] font-mono text-neutral-300 outline-none focus:border-violet-500" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-neutral-500 uppercase block mb-0.5">Port</label>
+                          <input type="number" value={sshCreds1.port} min="1" max="65535"
+                            onChange={e => { setSshCreds1({...sshCreds1, port: parseInt(e.target.value) || 22}); reparseChain(1, true); }}
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-[11px] font-mono text-neutral-300 outline-none focus:border-violet-500" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-neutral-500 uppercase block mb-0.5">Username</label>
+                          <input type="text" placeholder="root" value={sshCreds1.user}
+                            onChange={e => { setSshCreds1({...sshCreds1, user: e.target.value}); reparseChain(1, true); }}
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-[11px] font-mono text-neutral-300 outline-none focus:border-violet-500" />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-[9px] text-neutral-500 uppercase block mb-0.5">Password</label>
+                          <input type="password" placeholder="Enter password" value={sshCreds1.password}
+                            onChange={e => { setSshCreds1({...sshCreds1, password: e.target.value}); reparseChain(1, true); }}
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-[11px] font-mono text-neutral-300 outline-none focus:border-violet-500" />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -716,17 +786,57 @@ export default function App() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-5 h-5 rounded bg-neutral-800 text-neutral-400 flex items-center justify-center text-[10px] font-bold">2</span>
                     <span className="text-xs font-medium text-neutral-300">Chain Proxy</span>
-                    {chainParsed2 && <span className="text-[10px] text-neutral-500 font-mono ml-auto">{chainParsed2.protocol.toUpperCase()}</span>}
+                    <button
+                      onClick={() => toggleSSHMode(2)}
+                      className={`ml-auto px-2 py-0.5 text-[9px] font-medium rounded transition-colors ${
+                        sshMode2 ? 'bg-violet-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:text-neutral-200'
+                      }`}
+                      title="Switch to SSH mode"
+                    >🔑 SSH</button>
+                    {chainParsed2 && <span className="text-[10px] text-neutral-500 font-mono">{chainParsed2.protocol.toUpperCase()}</span>}
                   </div>
-                  <textarea value={chainInput2}
-                    onChange={e => onChainInputChange(2, e.target.value)}
-                    placeholder="vless://uuid@server:port?params#remark"
-                    className="w-full min-h-[100px] bg-neutral-950/50 border border-neutral-800 rounded-lg p-3 font-mono text-xs text-neutral-300 focus:ring-1 focus:ring-neutral-600 outline-none resize-y placeholder:text-neutral-700" />
-                  {chainParsed2 && (
-                    <div className="mt-2 p-2 bg-neutral-950/50 border border-neutral-800 rounded text-[10px] space-y-0.5 text-neutral-400">
-                      <div>{chainParsed2.server}:{chainParsed2.port}</div>
-                      {chainParsed2.type !== 'tcp' && <div>Transport: {chainParsed2.type}</div>}
-                      {chainParsed2.security !== 'none' && <div>Security: {chainParsed2.security}</div>}
+                  {!sshMode2 ? (
+                    <>
+                      <textarea value={chainInput2}
+                        onChange={e => onChainInputChange(2, e.target.value)}
+                        placeholder="vless://uuid@server:port?params#remark"
+                        className="w-full min-h-[100px] bg-neutral-950/50 border border-neutral-800 rounded-lg p-3 font-mono text-xs text-neutral-300 focus:ring-1 focus:ring-neutral-600 outline-none resize-y placeholder:text-neutral-700" />
+                      {chainParsed2 && (
+                        <div className="mt-2 p-2 bg-neutral-950/50 border border-neutral-800 rounded text-[10px] space-y-0.5 text-neutral-400">
+                          <div>{chainParsed2.server}:{chainParsed2.port}</div>
+                          {chainParsed2.type !== 'tcp' && <div>Transport: {chainParsed2.type}</div>}
+                          {chainParsed2.security !== 'none' && <div>Security: {chainParsed2.security}</div>}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="space-y-2 bg-neutral-950/50 border border-neutral-800 rounded-lg p-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2">
+                          <label className="text-[9px] text-neutral-500 uppercase block mb-0.5">Server</label>
+                          <input type="text" placeholder="1.2.3.4 or example.com" value={sshCreds2.server}
+                            onChange={e => { setSshCreds2({...sshCreds2, server: e.target.value}); reparseChain(2, true); }}
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-[11px] font-mono text-neutral-300 outline-none focus:border-violet-500" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-neutral-500 uppercase block mb-0.5">Port</label>
+                          <input type="number" value={sshCreds2.port} min="1" max="65535"
+                            onChange={e => { setSshCreds2({...sshCreds2, port: parseInt(e.target.value) || 22}); reparseChain(2, true); }}
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-[11px] font-mono text-neutral-300 outline-none focus:border-violet-500" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-neutral-500 uppercase block mb-0.5">Username</label>
+                          <input type="text" placeholder="root" value={sshCreds2.user}
+                            onChange={e => { setSshCreds2({...sshCreds2, user: e.target.value}); reparseChain(2, true); }}
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-[11px] font-mono text-neutral-300 outline-none focus:border-violet-500" />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-[9px] text-neutral-500 uppercase block mb-0.5">Password</label>
+                          <input type="password" placeholder="Enter password" value={sshCreds2.password}
+                            onChange={e => { setSshCreds2({...sshCreds2, password: e.target.value}); reparseChain(2, true); }}
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-[11px] font-mono text-neutral-300 outline-none focus:border-violet-500" />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

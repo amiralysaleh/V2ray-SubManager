@@ -6,6 +6,7 @@
 import { ProcessingOptions, LocationData } from '../types';
 import { safeB64Decode, safeB64Encode, safeBase64UrlDecode, safeBase64UrlEncode } from './base64';
 import { batchResolve } from './geoIp';
+import { DEFAULT_CS, DEFAULT_FM } from './enhancer';
 
 // --- Host Extraction ---
 
@@ -155,13 +156,16 @@ const processUrlBased = (link: string, opts: ProcessingOptions, index: number, l
       if (sec === 'tls' || sec === 'reality') params.set('alpn', 'h2,http/1.1');
     }
 
-    // URL Enhancer: inject cs / fm / fp (bulk version of Proxy-Builder enhancer)
+    // F+F (Patterniha): inject fp / cs / fm — cs & fm always use the
+    // original project's defaults unless the user explicitly edits them
     if (opts.enableEnhancer) {
       const sec = params.get('security') || 'none';
       if (opts.enhancerFp && opts.enhancerFp !== 'none') params.set('fp', opts.enhancerFp);
       if (sec === 'tls' || sec === 'reality') {
-        if (opts.enhancerCs) params.set('cs', opts.enhancerCs);
-        if (opts.enhancerFm) params.set('fm', opts.enhancerFm);
+        const cs = opts.enhancerCs === undefined ? DEFAULT_CS : opts.enhancerCs;
+        const fm = opts.enhancerFm === undefined ? DEFAULT_FM : opts.enhancerFm;
+        if (cs) params.set('cs', cs);
+        if (fm) params.set('fm', fm);
       }
       url.search = url.search.replace(/\+/g, '%20');
     }

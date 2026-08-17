@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { processConfigs, getTehranDate, parseSubscription, extractServerInfo } from './services/subscription';
 import { createOrUpdateGist } from './services/github';
-import { enhanceURL } from './services/enhancer';
+import { enhanceURL, DEFAULT_CS, DEFAULT_FM } from './services/enhancer';
 import {
   generateXrayConfig,
   generateSingboxConfig,
@@ -43,7 +43,7 @@ export default function App() {
     enableFragment: false, fragmentLength: '10-20', fragmentInterval: '10-20',
     allowInsecure: false, enableALPN: false,
     addLocationFlag: true, enableCDNIP: false, customCDN: '', customBaseName: '',
-    enableEnhancer: false, enhancerFp: 'chrome', enhancerCs: '', enhancerFm: '',
+    enableEnhancer: false, enhancerFp: 'chrome', enhancerCs: DEFAULT_CS, enhancerFm: DEFAULT_FM,
   });
 
   // === Enhancer Tab State ===
@@ -51,7 +51,7 @@ export default function App() {
   const [enhancerResult, setEnhancerResult] = useState('');
   const [enhancerRemark, setEnhancerRemark] = useState('');
   const [enhancerOptions, setEnhancerOptions] = useState<EnhancerOptions>({
-    server: '', fp: 'chrome', cs: '', fm: '',
+    server: '', fp: 'chrome', cs: DEFAULT_CS, fm: DEFAULT_FM,
   });
   const [enhancerParsed, setEnhancerParsed] = useState<ParsedProxy | null>(null);
 
@@ -469,15 +469,15 @@ export default function App() {
                           </select>
                         </div>
                         <div>
-                          <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Cipher Suites (cs)</label>
+                          <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Cipher Suites (cs) — empty to skip</label>
                           <textarea value={options.enhancerCs} onChange={e => setOptions({...options, enhancerCs: e.target.value})}
-                            placeholder="TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:..."
+                            placeholder="Defaults from Patterniha (clear to skip)"
                             className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-2 py-1.5 text-[10px] text-neutral-300 font-mono outline-none focus:border-violet-500 resize-none h-12 placeholder:text-neutral-700" />
                         </div>
                         <div>
-                          <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Fragment Mask (fm)</label>
+                          <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Fragment Mask (fm) — empty to skip</label>
                           <textarea value={options.enhancerFm} onChange={e => setOptions({...options, enhancerFm: e.target.value})}
-                            placeholder='{"tcp": [{"type": "fragment", ...}]}'
+                            placeholder='Defaults from Patterniha (clear to skip)'
                             className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-2 py-1.5 text-[10px] text-neutral-300 font-mono outline-none focus:border-violet-500 resize-none h-14 placeholder:text-neutral-700" />
                         </div>
                       </div>
@@ -679,14 +679,14 @@ export default function App() {
                   <textarea value={enhancerOptions.cs}
                     onChange={e => setEnhancerOptions({...enhancerOptions, cs: e.target.value})}
                     className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-300 font-mono outline-none focus:border-neutral-600 resize-none h-12"
-                    placeholder="TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:..." />
+                    placeholder="Defaults from Patterniha (clear to skip)" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Fragment Mask (fm) — empty to skip</label>
                   <textarea value={enhancerOptions.fm}
                     onChange={e => setEnhancerOptions({...enhancerOptions, fm: e.target.value})}
                     className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-300 font-mono outline-none focus:border-neutral-600 resize-none h-16"
-                    placeholder='{"tcp": [{"type": "fragment", ...}]}' />
+                    placeholder="Defaults from Patterniha (clear to skip)" />
                 </div>
               </div>
 

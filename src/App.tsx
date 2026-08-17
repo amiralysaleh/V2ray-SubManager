@@ -17,7 +17,7 @@ import { ProcessingOptions, LogEntry, PingResult, EnhancerOptions, ParsedProxy, 
 
 const TABS: AppTab[] = [
   { id: 'subscription', label: 'Subscription Manager', icon: '⊞' },
-  { id: 'enhancer', label: 'URL Enhancer', icon: '✦' },
+  { id: 'enhancer', label: 'F+F (Patterniha)', icon: '✦' },
   { id: 'chain', label: 'Chain Builder', icon: '⛓' },
 ];
 
@@ -122,18 +122,29 @@ export default function App() {
       setFilename(detected);
 
       // Some subscription servers (e.g. workers.dev) don't send CORS headers,
-      // so route the fetch through a public CORS proxy when a direct fetch fails.
+      // so route the fetch through public CORS proxies when direct fetch fails.
       let text: string;
       const directUrl = `${importUrl}${importUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      const encodedUrl = encodeURIComponent(directUrl);
       try {
         const res = await fetch(directUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         text = await res.text();
       } catch {
         addLog('info', 'Direct fetch blocked by CORS — retrying via proxy...');
-        const proxied = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`);
-        if (!proxied.ok) throw new Error(`HTTP ${proxied.status}`);
-        text = await proxied.text();
+        // Try allorigins (get wrapper — returns {"contents": "..."})
+        try {
+          const proxied = await fetch(`https://api.allorigins.win/get?url=${encodedUrl}`);
+          if (!proxied.ok) throw new Error(`HTTP ${proxied.status}`);
+          const json = await proxied.json();
+          if (typeof json?.contents !== 'string') throw new Error('Empty proxy response');
+          text = json.contents;
+        } catch {
+          // Fallback: codetabs proxy
+          const proxied2 = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`);
+          if (!proxied2.ok) throw new Error(`HTTP ${proxied2.status}`);
+          text = await proxied2.text();
+        }
       }
 
       if (text.trim().startsWith('{') && text.includes('outbounds')) {

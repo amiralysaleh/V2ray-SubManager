@@ -44,7 +44,7 @@ export default function App() {
     allowInsecure: false, enableALPN: false,
     enableCDNIP: false, customCDN: '',
     renameConfigs: false, renameTemplate: 'VS',
-    enableEnhancer: false, enhancerFp: 'chrome', enhancerCs: DEFAULT_CS, enhancerFm: DEFAULT_FM,
+    enableEnhancer: false, enhancerFp: 'unsafe', enhancerCs: DEFAULT_CS, enhancerFm: DEFAULT_FM,
   });
 
   // === Enhancer Tab State ===
@@ -52,7 +52,7 @@ export default function App() {
   const [enhancerResult, setEnhancerResult] = useState('');
   const [enhancerRemark, setEnhancerRemark] = useState('');
   const [enhancerOptions, setEnhancerOptions] = useState<EnhancerOptions>({
-    server: '', fp: 'chrome', cs: DEFAULT_CS, fm: DEFAULT_FM,
+    server: '', fp: 'unsafe', cs: DEFAULT_CS, fm: DEFAULT_FM,
   });
   const [enhancerParsed, setEnhancerParsed] = useState<ParsedProxy | null>(null);
 

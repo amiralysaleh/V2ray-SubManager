@@ -58,15 +58,18 @@ const extractHost = (link: string): string | null => {
 };
 
 // --- Naming ---
-
+// Optional: only renames configs when renameConfigs is enabled.
+// Default keeps the original alias untouched.
 const generateAlias = (
   originalAlias: string,
   index: number,
   location: LocationData | undefined,
   options: ProcessingOptions
 ): string => {
+  if (!options.renameConfigs) return originalAlias;
+
+  const base = options.renameTemplate?.trim() || 'VS';
   const parts: string[] = [];
-  const base = options.customBaseName?.trim() || 'VS';
 
   if (location?.country) {
     if (location.flag) parts.push(location.flag);
@@ -207,7 +210,7 @@ export const processConfigs = async (input: string, options: ProcessingOptions):
   const lines = inputText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
   let hostLocationMap: Record<string, LocationData> = {};
-  if (options.addLocationFlag) {
+  if (options.renameConfigs) {
     const hosts = lines.map(extractHost).filter((h): h is string => h !== null);
     if (hosts.length > 0) hostLocationMap = await batchResolve(hosts);
   }

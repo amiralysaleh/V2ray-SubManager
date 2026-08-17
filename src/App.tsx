@@ -42,7 +42,8 @@ export default function App() {
     enableMux: false, muxConcurrency: 8,
     enableFragment: false, fragmentLength: '10-20', fragmentInterval: '10-20',
     allowInsecure: false, enableALPN: false,
-    addLocationFlag: true, enableCDNIP: false, customCDN: '', customBaseName: '',
+    enableCDNIP: false, customCDN: '',
+    renameConfigs: false, renameTemplate: 'VS',
     enableEnhancer: false, enhancerFp: 'chrome', enhancerCs: DEFAULT_CS, enhancerFm: DEFAULT_FM,
   });
 
@@ -165,7 +166,7 @@ export default function App() {
     setLoading(true);
     const action = isUpdate ? 'UPDATE' : 'CREATE';
     addLog('info', `${action} Gist...`);
-    if (options.addLocationFlag) addLog('info', 'Resolving server locations...');
+    if (options.renameConfigs) addLog('info', 'Resolving server locations for renaming...');
 
     try {
       const result = await processConfigs(inputConfigs, options);
@@ -392,16 +393,18 @@ export default function App() {
                   <span className="text-violet-400">⚙</span> Processing Options
                 </h2>
                 <div className="space-y-1 divide-y divide-neutral-800/50">
-                  {/* Naming */}
+                  {/* Rename Configs (optional, OFF by default) */}
                   <div className="py-2">
                     <div className="text-xs font-medium text-neutral-400 mb-2">Config Naming</div>
-                    <Toggle label="Auto Geo-Rename" description="Format: Flag + Country + Name + #N" checked={options.addLocationFlag} onChange={v => setOptions({...options, addLocationFlag: v})} />
-                    <div className="mt-2">
-                      <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Custom Base Name</label>
-                      <input type="text" placeholder="Default: VS" value={options.customBaseName}
-                        onChange={e => setOptions({...options, customBaseName: e.target.value})}
-                        className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-2 py-1.5 text-xs text-neutral-300 font-mono outline-none focus:border-neutral-600 placeholder:text-neutral-700" />
-                    </div>
+                    <Toggle label="Rename Configs" description="Off: keep original names" checked={options.renameConfigs} onChange={v => setOptions({...options, renameConfigs: v})} />
+                    {options.renameConfigs && (
+                      <div className="mt-2">
+                        <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Base Name (Flag + Country + Name + #N)</label>
+                        <input type="text" placeholder="Default: VS" value={options.renameTemplate}
+                          onChange={e => setOptions({...options, renameTemplate: e.target.value})}
+                          className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-2 py-1.5 text-xs text-neutral-300 font-mono outline-none focus:border-neutral-600 placeholder:text-neutral-700" />
+                      </div>
+                    )}
                   </div>
 
                   {/* CDN IP */}

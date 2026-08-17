@@ -10,10 +10,11 @@ export interface ProcessingOptions {
   fragmentInterval: string;
   allowInsecure: boolean;
   enableALPN: boolean;
-  addLocationFlag: boolean;
   enableCDNIP: boolean;
   customCDN: string;
-  customBaseName: string;
+  // Optional config renaming — OFF by default, keeps original names
+  renameConfigs: boolean;
+  renameTemplate: string;
   // URL Enhancer (cs/fm/fp injection)
   enableEnhancer: boolean;
   enhancerFp: string;

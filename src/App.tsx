@@ -122,28 +122,30 @@ export default function App() {
       setFilename(detected);
 
       // Some subscription servers (e.g. workers.dev) don't send CORS headers,
-      // so route the fetch through public CORS proxies when direct fetch fails.
+      // so route the fetch through a public CORS proxy when direct fetch fails.
       let text: string;
       const directUrl = `${importUrl}${importUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
-      const encodedUrl = encodeURIComponent(directUrl);
       try {
         const res = await fetch(directUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         text = await res.text();
       } catch {
         addLog('info', 'Direct fetch blocked by CORS — retrying via proxy...');
-        // Try allorigins (get wrapper — returns {"contents": "..."})
+        // proxy.cors.sh sends Access-Control-Allow-Origin: * and works with
+        // workers.dev URLs (tested). Fall back to allorigins /get as backup.
         try {
-          const proxied = await fetch(`https://api.allorigins.win/get?url=${encodedUrl}`);
+          const proxied = await fetch(`https://proxy.cors.sh/${directUrl}`, {
+            headers: { Origin: window.location.origin },
+          });
           if (!proxied.ok) throw new Error(`HTTP ${proxied.status}`);
-          const json = await proxied.json();
+          text = await proxied.text();
+        } catch {
+          const encodedUrl = encodeURIComponent(directUrl);
+          const proxied2 = await fetch(`https://api.allorigins.win/get?url=${encodedUrl}`);
+          if (!proxied2.ok) throw new Error(`HTTP ${proxied2.status}`);
+          const json = await proxied2.json();
           if (typeof json?.contents !== 'string') throw new Error('Empty proxy response');
           text = json.contents;
-        } catch {
-          // Fallback: codetabs proxy
-          const proxied2 = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`);
-          if (!proxied2.ok) throw new Error(`HTTP ${proxied2.status}`);
-          text = await proxied2.text();
         }
       }
 

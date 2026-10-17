@@ -476,11 +476,11 @@ export default function App() {
                           <label className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Fingerprint (fp)</label>
                           <select value={options.enhancerFp} onChange={e => setOptions({...options, enhancerFp: e.target.value})}
                             className="w-full bg-neutral-950/50 border border-neutral-800 rounded px-2 py-1.5 text-xs text-neutral-300 outline-none focus:border-violet-500">
+                            <option value="unsafe">unsafe</option>
                             <option value="chrome">chrome</option>
                             <option value="firefox">firefox</option>
                             <option value="safari">safari</option>
                             <option value="random">random</option>
-                            <option value="unsafe">unsafe</option>
                             <option value="none">none</option>
                           </select>
                         </div>

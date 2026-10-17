@@ -98,7 +98,9 @@ const processVmess = (link: string, opts: ProcessingOptions, index: number, loc:
       json.allowInsecure = 1;
     }
 
-    json.ps = generateAlias(json.ps, index, loc, opts);
+    if (opts.renameConfigs) {
+      json.ps = generateAlias(json.ps || '', index, loc, opts);
+    }
     return 'vmess://' + safeB64Encode(JSON.stringify(json));
   } catch {
     return link;
@@ -114,7 +116,13 @@ const processSSR = (link: string, opts: ProcessingOptions, index: number, loc: L
     const [mainPart, paramsStr] = decoded.split('/?');
     if (!mainPart) return link;
     const params = new URLSearchParams(paramsStr || '');
-    params.set('remarks', safeBase64UrlEncode(generateAlias('SSR', index, loc, opts)));
+    if (opts.renameConfigs) {
+      let origRemark = 'SSR';
+      if (params.get('remarks')) {
+        origRemark = safeBase64UrlDecode(params.get('remarks')!) || 'SSR';
+      }
+      params.set('remarks', safeBase64UrlEncode(generateAlias(origRemark, index, loc, opts)));
+    }
     return 'ssr://' + safeBase64UrlEncode(`${mainPart}/?${params.toString()}`);
   } catch {
     return link;
@@ -163,7 +171,8 @@ const processUrlBased = (link: string, opts: ProcessingOptions, index: number, l
     // original project's defaults unless the user explicitly edits them
     if (opts.enableEnhancer) {
       const sec = params.get('security') || 'none';
-      if (opts.enhancerFp && opts.enhancerFp !== 'none') params.set('fp', opts.enhancerFp);
+      const fp = opts.enhancerFp || 'unsafe';
+      if (fp !== 'none') params.set('fp', fp);
       if (sec === 'tls' || sec === 'reality') {
         const cs = opts.enhancerCs === undefined ? DEFAULT_CS : opts.enhancerCs;
         const fm = opts.enhancerFm === undefined ? DEFAULT_FM : opts.enhancerFm;
@@ -173,8 +182,19 @@ const processUrlBased = (link: string, opts: ProcessingOptions, index: number, l
       url.search = url.search.replace(/\+/g, '%20');
     }
 
-    url.hash = encodeURIComponent(generateAlias('Config', index, loc, opts));
-    return url.toString();
+    if (opts.renameConfigs) {
+      const origAlias = url.hash ? decodeURIComponent(url.hash.slice(1)) : 'Config';
+      url.hash = encodeURIComponent(generateAlias(origAlias, index, loc, opts));
+      return url.toString();
+    } else {
+      const hashIdx = link.indexOf('#');
+      if (hashIdx !== -1) {
+        url.hash = '';
+        return url.toString() + link.slice(hashIdx);
+      }
+      url.hash = '';
+      return url.toString();
+    }
   } catch {
     return link;
   }

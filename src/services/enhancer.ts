@@ -54,8 +54,9 @@ export const enhanceURL = (
   }
 
   // Fingerprint — applied when selected value is non-empty
-  if (options.fp && options.fp !== 'none') {
-    params.set('fp', options.fp);
+  const fp = options.fp || 'unsafe';
+  if (fp !== 'none') {
+    params.set('fp', fp);
   }
 
   // Cipher suites & fragment mask — always applied with defaults for TLS,

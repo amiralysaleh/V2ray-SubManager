@@ -263,7 +263,7 @@ export default function App() {
     }
     setEnhancerResult(result.url);
     const p = enhancerParsed;
-    setEnhancerRemark(p ? `${p.protocol.toUpperCase()} ${p.server}:${p.port} | enhanced` : 'Enhanced');
+    setEnhancerRemark(p?.remark ? `${p.remark} | enhanced` : (p ? `${p.protocol.toUpperCase()} ${p.server}:${p.port} | enhanced` : 'Enhanced'));
     addLog('success', 'URL enhanced successfully.');
   };
 

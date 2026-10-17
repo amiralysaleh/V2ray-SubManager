@@ -22,9 +22,17 @@ export const extractServerInfo = (input: string): ServerInfo[] => {
       }
       if (line.startsWith('vless://') || line.startsWith('trojan://') || line.startsWith('ss://')) {
         const url = new URL(line);
+        let alias = url.hostname;
+        if (url.hash) {
+          try {
+            alias = decodeURIComponent(url.hash.substring(1)) || url.hostname;
+          } catch {
+            alias = url.hash.substring(1) || url.hostname;
+          }
+        }
         return {
           id: `url-${index}`,
-          alias: decodeURIComponent(url.hash.substring(1)) || url.hostname,
+          alias,
           host: url.hostname,
           protocol: url.protocol.replace(':', '').toUpperCase(),
         };

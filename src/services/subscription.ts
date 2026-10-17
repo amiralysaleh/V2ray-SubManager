@@ -183,14 +183,23 @@ const processUrlBased = (link: string, opts: ProcessingOptions, index: number, l
     }
 
     if (opts.renameConfigs) {
-      const origAlias = url.hash ? decodeURIComponent(url.hash.slice(1)) : 'Config';
-      url.hash = encodeURIComponent(generateAlias(origAlias, index, loc, opts));
-      return url.toString();
+      let origAlias = 'Config';
+      if (url.hash) {
+        try { origAlias = decodeURIComponent(url.hash.slice(1)); } catch { origAlias = url.hash.slice(1); }
+      }
+      const newAlias = generateAlias(origAlias, index, loc, opts);
+      url.hash = '';
+      return url.toString() + '#' + newAlias;
     } else {
       const hashIdx = link.indexOf('#');
       if (hashIdx !== -1) {
         url.hash = '';
-        return url.toString() + link.slice(hashIdx);
+        const rawHash = link.slice(hashIdx + 1);
+        let decodedHash = rawHash;
+        try {
+          decodedHash = decodeURIComponent(rawHash);
+        } catch { /* keep raw */ }
+        return url.toString() + '#' + decodedHash;
       }
       url.hash = '';
       return url.toString();
@@ -276,7 +285,15 @@ export const extractServerInfo = (input: string): { id: string; alias: string; h
       }
       if (line.startsWith('vless://') || line.startsWith('trojan://') || line.startsWith('ss://')) {
         const url = new URL(line);
-        return { id: `url-${i}`, alias: decodeURIComponent(url.hash.slice(1)) || url.hostname, host: url.hostname, protocol: url.protocol.replace(':', '').toUpperCase() };
+        let alias = url.hostname;
+        if (url.hash) {
+          try {
+            alias = decodeURIComponent(url.hash.slice(1)) || url.hostname;
+          } catch {
+            alias = url.hash.slice(1) || url.hostname;
+          }
+        }
+        return { id: `url-${i}`, alias, host: url.hostname, protocol: url.protocol.replace(':', '').toUpperCase() };
       }
     } catch { /* skip */ }
     return null;

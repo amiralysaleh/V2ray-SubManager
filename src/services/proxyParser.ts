@@ -4,7 +4,7 @@
 // ============================================================
 
 import { ParsedProxy } from '../types';
-import { safeBase64UrlDecode } from './base64';
+import { safeBase64UrlDecode, safeB64Decode } from './base64';
 
 export interface SSHCredentials {
   server: string;
@@ -12,6 +12,14 @@ export interface SSHCredentials {
   user: string;
   password: string;
 }
+
+const safeDecode = (str: string): string => {
+  try {
+    return decodeURIComponent(str);
+  } catch {
+    return str;
+  }
+};
 
 export const parseSSH = (creds: SSHCredentials): ParsedProxy | { error: string } | null => {
   const server = creds.server.trim();
@@ -30,21 +38,8 @@ export const parseSSH = (creds: SSHCredentials): ParsedProxy | { error: string }
 };
 
 const safeAtob = (str: string): string | null => {
-  try {
-    const padded = str.replace(/-/g, '+').replace(/_/g, '/');
-    const pad = padded.length % 4;
-    const final = pad ? padded + '='.repeat(4 - pad) : padded;
-    return decodeURIComponent(atob(final).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-  } catch {
-    try {
-      const padded = str.replace(/-/g, '+').replace(/_/g, '/');
-      const pad = padded.length % 4;
-      const final = pad ? padded + '='.repeat(4 - pad) : padded;
-      return atob(final);
-    } catch {
-      return null;
-    }
-  }
+  const res = safeB64Decode(str);
+  return res || null;
 };
 
 export const parseProxyURL = (raw: string): ParsedProxy | { error: string } | null => {
@@ -74,7 +69,7 @@ function parseVless(url: string): ParsedProxy {
     uuid: u.username || decodeURIComponent(url.split('://')[1].split('@')[0]),
     server: u.hostname,
     port: parseInt(u.port) || 443,
-    remark: decodeURIComponent(u.hash.slice(1) || ''),
+    remark: safeDecode(u.hash.slice(1) || ''),
     type: p.type || 'tcp',
     headerType: p.headerType || 'none',
     host: p.host,
@@ -128,7 +123,7 @@ function parseTrojan(url: string): ParsedProxy {
     password: decodeURIComponent(u.username || url.split('://')[1].split('@')[0]),
     server: u.hostname,
     port: parseInt(u.port) || 443,
-    remark: decodeURIComponent(u.hash.slice(1) || ''),
+    remark: safeDecode(u.hash.slice(1) || ''),
     type: p.type || 'tcp',
     headerType: p.headerType || 'none',
     host: p.host,
@@ -153,7 +148,7 @@ function parseShadowsocks(url: string): ParsedProxy {
   const hashIdx = raw.indexOf('#');
   let remark = '';
   if (hashIdx !== -1) {
-    remark = decodeURIComponent(raw.slice(hashIdx + 1));
+    remark = safeDecode(raw.slice(hashIdx + 1));
     raw = raw.slice(0, hashIdx);
   }
   let method, password, server, port;
@@ -184,7 +179,7 @@ function parseSocks(url: string): ParsedProxy {
     else if (d) { user = d; pass = u.password ? (safeAtob(u.password) || u.password) : undefined; }
     else { user = decodeURIComponent(u.username); pass = u.password ? decodeURIComponent(u.password) : undefined; }
   }
-  return { protocol: 'socks', server: u.hostname, port: parseInt(u.port) || 1080, user, pass, remark: decodeURIComponent(u.hash.slice(1) || '') };
+  return { protocol: 'socks', server: u.hostname, port: parseInt(u.port) || 1080, user, pass, remark: safeDecode(u.hash.slice(1) || '') };
 }
 
 function parseHttp(url: string): ParsedProxy {
@@ -196,5 +191,5 @@ function parseHttp(url: string): ParsedProxy {
     else if (d) { user = d; pass = u.password ? (safeAtob(u.password) || u.password) : undefined; }
     else { user = decodeURIComponent(u.username); pass = u.password ? decodeURIComponent(u.password) : undefined; }
   }
-  return { protocol: 'http', server: u.hostname, port: parseInt(u.port) || 80, user, pass, remark: decodeURIComponent(u.hash.slice(1) || '') };
+  return { protocol: 'http', server: u.hostname, port: parseInt(u.port) || 80, user, pass, remark: safeDecode(u.hash.slice(1) || '') };
 }

@@ -69,5 +69,14 @@ export const enhanceURL = (
   }
 
   u.search = u.search.replace(/\+/g, '%20');
+
+  const hashIdx = url.indexOf('#');
+  if (hashIdx !== -1) {
+    u.hash = '';
+    let hash = url.slice(hashIdx + 1);
+    try { hash = decodeURIComponent(hash); } catch {}
+    return { url: u.toString() + '#' + hash };
+  }
+  u.hash = '';
   return { url: u.toString() };
 };
